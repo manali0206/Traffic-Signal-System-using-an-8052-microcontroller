@@ -1,0 +1,299 @@
+t2mod equ 0xc9
+	 	th2 equ 0xcd
+	 	tl2 equ 0xcc
+	 	tr2 equ 0xc8.2
+	 	tf2 equ 0xc8.7
+	 	t2con equ 0xc8
+
+		org 0000h
+		sjmp main
+		
+		ORG 0003H
+		CLR EX0
+		CALL COUNT
+		SETB EX0
+		SETB TF2
+		RETI
+
+		org 0050h
+main:	mov sp,#70h
+		lcall lcdin
+		mov p0,#01h
+		call command
+		mov dptr,#title1
+		lcall labal1
+		mov p0,#0c0h
+		call command
+		mov dptr,#title2
+		lcall labal1
+		call sec1
+		call sec1
+		mov p0,#01h
+		call command
+		mov dptr,#title3
+		lcall labal1
+		call sec1
+		mov p0,#0C0h
+		call command
+		mov dptr,#title4
+		lcall labal1
+		call sec1
+		MOV R4,#20
+		MOV IE,#81H
+		SETB IT0
+		MOV 31H,#5
+		MOV 32H,#5
+		MOV 33H,#5
+		MOV 34H,#5
+		
+xxx:	mov p0,#01h
+		call command
+		mov dptr,#LANE1
+		lcall labal1
+		MOV P0,#0C0H
+		CALL command
+		MOV A,31H
+		CALL DISPALY_COUNT
+		MOV A,32H
+		CALL DISPALY_COUNT
+		MOV A,33H
+		CALL DISPALY_COUNT
+		MOV A,34H
+		CALL DISPALY_COUNT
+		call lane1_go
+		MOV R4,31H
+		CALL SEC20
+		MOV 31H,#5
+		
+		mov p0,#01h
+		call command
+		mov dptr,#LANE2
+		lcall labal1
+		MOV P0,#0C0H
+		CALL command
+		MOV A,31H
+		CALL DISPALY_COUNT
+		MOV A,32H
+
+		CALL DISPALY_COUNT
+		MOV A,33H
+		CALL DISPALY_COUNT
+		MOV A,34H
+		CALL DISPALY_COUNT
+		call lane2_go
+		MOV R4,32H
+		CALL SEC20
+		MOV 32H,#5
+		
+		mov p0,#01h
+		call command
+		mov dptr,#LANE3
+		lcall labal1
+		MOV P0,#0C0H
+		CALL command
+		MOV A,31H
+		CALL DISPALY_COUNT
+		MOV A,32H
+		CALL DISPALY_COUNT
+		MOV A,33H
+		CALL DISPALY_COUNT
+		MOV A,34H
+		CALL DISPALY_COUNT
+		call lane3_go
+		MOV R4,33H
+		CALL SEC20
+		MOV 33H,#5
+		
+		mov p0,#01h
+		call command
+		mov dptr,#LANE4
+		lcall labal1
+		MOV P0,#0C0H
+		CALL command
+		MOV A,31H
+		CALL DISPALY_COUNT
+		MOV A,32H
+		CALL DISPALY_COUNT
+
+		MOV A,33H
+
+		CALL DISPALY_COUNT
+		MOV A,34H
+		CALL DISPALY_COUNT
+		call lane4_go
+		MOV R4,34H
+		CALL SEC20
+		MOV 34H,#5
+		Ljmp xxx
+		
+COUNT:
+		JB P2.4, LANE_2
+		INC 31H
+LANE_2:	JB P2.5, LANE_3
+		INC 32H
+LANE_3: JB P2.6, LANE_4
+		INC 33H
+LANE_4: JB P2.7, LANE_5
+		INC 34H
+LANE_5:	
+
+		RET
+
+lcdin:	mov p0,#38h
+		call command
+		mov p0,#06h
+		call command
+		mov p0,#0fh
+		call command
+		mov p0,#01h
+		call command
+		ret	
+
+						
+DISPALY_COUNT:
+		; MOV B,#2
+		; DIV AB
+		mov b,#64h
+
+		div ab
+		add a,#30h
+
+		mov r1,a
+		mov a,b
+		mov b,#0ah
+		div ab
+		add a,#30h
+		mov r2,a
+		mov a,b
+		add a,#30h
+		mov r3,a
+		mov p0,R1
+		call dataa
+		mov p0,R2
+		call dataa
+		mov p0,R3
+		call dataa
+		mov p0,#' '
+		call dataa
+		ret
+
+labal1:	clr a
+		movc a,@a+dptr
+		cjne a,#'*',down
+		ret
+down:	mov p0,a
+		lcall dataa
+		inc dptr
+		sjmp labal1	
+
+TX:		JNB TI,$
+		CLR TI
+		RET	
+
+command:clr p3.6
+    	setb p3.7
+	    clr p3.7
+	    call delay
+
+		ret
+
+dataa:	setb p3.6
+    	setb p3.7
+	    clr p3.7
+	    call delay
+	    ret
+
+delay:	mov t2mod,#00h
+	  	mov th2,#0EEh
+	  	mov tl2,#00h
+	 	setb tr2	
+		jnb tf2,$
+		clr tr2
+		clr tf2
+		ret
+
+sec1:	SETB RS0
+		CLR RS1
+		mov r7,#200
+again:	lcall delay
+		djnz r7,again
+		CLR RS0
+		CLR RS1
+		ret
+
+SEC20:	
+AGAIN1:	CALL sec1
+		;DEC R4
+		DJNZ R4,AGAIN1
+		RET
+
+lane1_go:
+		setb p1.0
+		setb p1.1
+		clr p1.2
+		clr p1.3
+		setb p1.4
+		setb p1.5
+
+		clr p1.6
+		setb p1.7
+		setb p2.0
+		clr p2.1
+		setb p2.2
+		setb p2.3
+		ret	
+lane2_go:
+		clr p1.0
+		setb p1.1
+		setb p1.2
+		setb p1.3
+		setb p1.4
+		clr p1.5
+		clr p1.6
+		setb p1.7
+		setb p2.0
+		clr p2.1
+		setb p2.2
+		setb p2.3
+		ret	
+
+lane3_go:
+		clr p1.0
+		setb p1.1
+		setb p1.2
+		clr p1.3
+		setb p1.4
+		setb p1.5
+		setb p1.6
+		setb p1.7
+		clr p2.0
+		clr p2.1
+		setb p2.2
+		setb p2.3
+		ret	
+
+lane4_go:
+		clr p1.0
+
+		setb p1.1
+		setb p1.2
+		clr p1.3
+		setb p1.4
+		setb p1.5
+		clr p1.6
+		setb p1.7
+		setb p2.0
+		setb p2.1
+		setb p2.2
+		clr p2.3
+		ret	
+		
+Title1:		db "ADAPTIVE TRAFFIC",'*' 
+Title2:		db " SIGNAL SYSTEM  ",'*' 
+Title3:		db "KIT TE ENTC-B",'*' 
+Title4:		db "Kolhapur 2023",'*' 
+LANE1:		db "LANE-1 GO",'*' 
+LANE2:		db "LANE-2 GO",'*' 
+LANE3:		db "LANE-3 GO",'*' 
+LANE4:		db "LANE-4 GO",'*' 
+end
